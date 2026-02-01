@@ -1,0 +1,18 @@
+.state-alert .eye-glow {
+    background: radial-gradient(circle, #ff3b3b 0%, #250000 50%, #000 100%);
+}
+
+.state-alert .pupil {
+    width: 20%;
+    height: 40%;
+    border-radius: 50% / 60%;
+    background: radial-gradient(circle at 30% 30%, #fff 0%, #600 35%, #000 100%);
+    box-shadow: 0 0 35px rgba(255, 60, 60, 0.9), 0 0 60px rgba(255, 40, 40, 0.6);
+}
+
+.state-alert .iris-ring {
+    width: 55%;
+    height: 55%;
+    border-color: rgba(255, 60, 60, 0.7);
+    box-shadow: 0 0 12px rgba(255, 60, 60, 0.6), inset 0 0 15px rgba(0, 0, 0, 0.85);
+}

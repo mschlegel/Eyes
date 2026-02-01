@@ -1,0 +1,16 @@
+.state-existential .eye-glow {
+    background: radial-gradient(circle at 25% 25%, rgba(255,255,255,0.15) 0%, transparent 35%), radial-gradient(circle, #6a5cff 0%, #0a0825 60%, #000 100%);
+}
+
+.state-existential .pupil {
+    width: 14%;
+    height: 14%;
+    background: #000;
+    box-shadow: 0 0 30px rgba(140, 120, 255, 0.9);
+}
+
+.state-existential .iris-ring {
+    width: 72%;
+    height: 72%;
+    border-color: rgba(160, 150, 255, 0.9);
+}

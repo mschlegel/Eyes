@@ -1,0 +1,16 @@
+.state-cognitive .eye-glow {
+    background: radial-gradient(circle, #b28dff 0%, #1b0033 60%, #000 100%);
+}
+
+.state-cognitive .pupil {
+    width: 22%;
+    height: 22%;
+    background: radial-gradient(circle, #e6d9ff 0%, #7d5bd6 40%, #000 100%);
+    box-shadow: 0 0 20px rgba(170, 140, 255, 0.7);
+}
+
+.state-cognitive .iris-ring {
+    width: 62%;
+    height: 62%;
+    border-color: rgba(190, 160, 255, 0.8);
+}

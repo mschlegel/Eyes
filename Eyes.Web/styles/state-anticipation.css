@@ -1,0 +1,16 @@
+.state-anticipation .eye-glow {
+    background: radial-gradient(circle, #ffd166 0%, #3a2600 60%, #000 100%);
+}
+
+.state-anticipation .pupil {
+    width: 26%;
+    height: 36%;
+    border-radius: 50% / 65%;
+    background: radial-gradient(circle, #fff0c2 0%, #d49c1f 40%, #000 100%);
+}
+
+.state-anticipation .iris-ring {
+    width: 60%;
+    height: 60%;
+    border-color: rgba(255, 200, 100, 0.8);
+}

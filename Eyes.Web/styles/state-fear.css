@@ -1,0 +1,16 @@
+.state-fear .eye-glow {
+    background: radial-gradient(circle, #8affff 0%, #002b2b 60%, #000 100%);
+}
+
+.state-fear .pupil {
+    width: 10%;
+    height: 10%;
+    background: #000;
+    box-shadow: 0 0 20px rgba(140, 255, 255, 0.9);
+}
+
+.state-fear .iris-ring {
+    width: 70%;
+    height: 70%;
+    border-color: rgba(180, 255, 255, 0.9);
+}

@@ -1,0 +1,16 @@
+.state-love .eye-glow {
+    background: radial-gradient(circle, #ff7eb6 0%, #2a0016 60%, #000 100%);
+}
+
+.state-love .pupil {
+    width: 34%;
+    height: 34%;
+    background: radial-gradient(circle, #ffd6e8 0%, #ff5fa2 40%, #000 100%);
+    box-shadow: 0 0 28px rgba(255, 120, 180, 0.9);
+}
+
+.state-love .iris-ring {
+    width: 56%;
+    height: 56%;
+    border-color: rgba(255, 140, 200, 0.9);
+}

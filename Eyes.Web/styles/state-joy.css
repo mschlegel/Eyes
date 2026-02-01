@@ -1,0 +1,16 @@
+.state-joy .eye-glow {
+    background: radial-gradient(circle, #ffe066 0%, #3a2f00 55%, #000 100%);
+}
+
+.state-joy .pupil {
+    width: 35%;
+    height: 35%;
+    background: radial-gradient(circle, #fff8cc 0%, #ffcc33 40%, #000 100%);
+    box-shadow: 0 0 30px rgba(255, 220, 100, 0.9);
+}
+
+.state-joy .iris-ring {
+    width: 55%;
+    height: 55%;
+    border-color: rgba(255, 220, 120, 0.9);
+}

@@ -1,0 +1,17 @@
+.state-sadness .eye-glow {
+    background: radial-gradient(circle, #5f8cff 0%, #0a1530 60%, #000 100%);
+    opacity: 0.6;
+}
+
+.state-sadness .pupil {
+    width: 22%;
+    height: 22%;
+    background: radial-gradient(circle, #bcd2ff 0%, #3a4f8f 45%, #000 100%);
+    box-shadow: 0 0 12px rgba(120, 160, 255, 0.5);
+}
+
+.state-sadness .iris-ring {
+    width: 42%;
+    height: 42%;
+    border-color: rgba(140, 170, 255, 0.4);
+}
