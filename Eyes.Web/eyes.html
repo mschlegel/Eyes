@@ -26,12 +26,12 @@
     </div>
 
     <!-- ⭐ FULL-SCREEN TEST OVERLAY -->
-    <div id="bridgeTestOverlay"
+    <div id="notificationOverlay"
          style="position:fixed; top:0; left:0; right:0; bottom:0;
                 color:white;
                 font-size:40px; display:none; z-index:999999;
                 padding:40px; text-align:center;">
-        BRIDGE TEST OVERLAY
+        
     </div>
 
     <!-- Your existing scripts -->
@@ -43,7 +43,7 @@
     <!-- ⭐ ANDROID BRIDGE CALLBACK -->
     <script>
         window.onAndroidNotification = function(title, text) {
-            const box = document.getElementById("bridgeTestOverlay");
+            const box = document.getElementById("notificationOverlay");
             box.innerText = title + "\n" + text;
             box.style.display = "block";
         };
