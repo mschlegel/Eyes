@@ -34,14 +34,5 @@
     <script src="js/emotion-eye-bridge.js"></script>
     <script src="js/notifications.js"></script>
 
-    <!-- ⭐ ANDROID BRIDGE CALLBACK -->
-    <script>
-        window.onAndroidNotification = function(title, text) {
-            const box = document.getElementById("notificationOverlay");
-            box.innerText = title + "\n" + text;
-            box.style.display = "block";
-        };
-    </script>
-
 </body>
 </html>
