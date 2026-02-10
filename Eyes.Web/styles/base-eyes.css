@@ -118,3 +118,76 @@ html, body {
     transform: translate( calc(var(--look-x) * 0.4), calc(var(--look-y) * 0.4) );
     transition: transform 0.2s ease-out;
 }
+
+/* ============================= */
+/* Layout override - move to TL */
+/* ============================= */
+
+.viewport{
+    display:flex;
+    justify-content:flex-start;
+    align-items:flex-start;
+    padding:2vh;
+}
+
+/* ============================= */
+/* Notification panel           */
+/* ============================= */
+
+#notificationOverlay{
+    position:fixed;
+
+    /* below the eyes automatically */
+    top:18vh;
+
+    left:2vw;
+    width:min(92vw, 420px);
+    max-height:70vh;
+
+    overflow-y:auto;
+
+    background:rgba(0,0,0,0.75);
+    backdrop-filter: blur(6px);
+
+    color:white;
+    font-size:clamp(10px, 1.2vw, 13px);
+    font-family: monospace;
+
+    border-radius:12px;
+    padding:10px;
+
+    z-index:999999;
+    display:none;
+}
+
+/* ============================= */
+/* Rows                         */
+/* ============================= */
+
+.notif-row{
+    margin-bottom:8px;
+    padding-bottom:6px;
+    border-bottom:1px solid rgba(255,255,255,0.08);
+}
+
+.notif-key{
+    color:#7dd3fc;
+    font-weight:bold;
+    margin-bottom:2px;
+}
+
+.notif-value{
+    color:white;
+    word-break:break-word;
+}
+
+/* ============================= */
+/* Images auto-fit              */
+/* ============================= */
+
+.notif-value img{
+    max-width:100%;
+    border-radius:6px;
+    margin-top:4px;
+}
+
