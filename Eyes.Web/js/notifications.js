@@ -50,5 +50,32 @@ window.onAndroidNotification = function (payload) {
         box.appendChild(row);
     });
 
+    // ------------------------------
+    // Actions Section (at bottom)
+    // ------------------------------
+    if (Array.isArray(data.actions)) {
+        const header = document.createElement("div");
+        header.className = "notif-row";
+        header.innerHTML = "<div class='notif-key'>Available Actions</div>";
+        box.appendChild(header);
+
+        data.actions.forEach(act => {
+            const row = document.createElement("div");
+            row.className = "notif-row";
+
+            const k = document.createElement("div");
+            k.className = "notif-key";
+            k.textContent = act.title || "(no title)";
+
+            const v = document.createElement("div");
+            v.className = "notif-value";
+            v.textContent = act.hasIntent ? "PendingIntent available" : "No intent";
+
+            row.appendChild(k);
+            row.appendChild(v);
+            box.appendChild(row);
+        });
+    }
+
     box.style.display = "block";
 };
