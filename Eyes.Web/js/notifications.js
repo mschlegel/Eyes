@@ -1,8 +1,30 @@
-window.onAndroidNotification = function (data) {
+window.onAndroidNotification = function (payload) {
     const box = document.getElementById("notificationOverlay");
-
     box.innerHTML = "";
 
+    // ------------------------------
+    // Normalize input
+    // ------------------------------
+    let data = payload;
+
+    if (typeof payload === "string") {
+        try {
+            data = JSON.parse(payload);
+        } catch (e) {
+            console.log("Failed to parse JSON", e);
+            return;
+        }
+    }
+
+    if (!data || typeof data !== "object") {
+        box.innerText = "Invalid notification payload";
+        box.style.display = "block";
+        return;
+    }
+
+    // ------------------------------
+    // Build rows
+    // ------------------------------
     Object.keys(data).forEach(key => {
         const row = document.createElement("div");
         row.className = "notif-row";
@@ -16,12 +38,9 @@ window.onAndroidNotification = function (data) {
 
         const value = data[key];
 
-        // basic object detection
-        if (typeof value === "string" && value.startsWith("content://")) {
-            const img = document.createElement("img");
-            img.src = value;
-            img.style.maxWidth = "100%";
-            v.appendChild(img);
+        // Pretty print objects / arrays
+        if (typeof value === "object") {
+            v.textContent = JSON.stringify(value, null, 2);
         } else {
             v.textContent = value;
         }
