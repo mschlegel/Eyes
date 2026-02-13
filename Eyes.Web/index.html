@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Eerie Eyes - Watch & Customize</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            touch-action: none;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Controls Panel */
+        #controls {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%) translateY(100%);
+            background: rgba(20, 20, 20, 0.95);
+            border-radius: 20px 20px 0 0;
+            padding: 25px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1000;
+            box-shadow: 0 -5px 30px rgba(255, 0, 0, 0.3);
+        }
+
+        #controls.open {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        #controls::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #controls::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        #controls::-webkit-scrollbar-thumb {
+            background: rgba(255, 0, 0, 0.5);
+            border-radius: 4px;
+        }
+
+        #controls-toggle {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(150, 0, 0, 0.9);
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 999;
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.4);
+            transition: all 0.3s;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #controls-toggle.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #controls-toggle:hover {
+            background: rgba(200, 0, 0, 0.9);
+            transform: translateX(-50%) scale(1.05);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            color: #fff;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            border-radius: 3px;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #ff0000;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #ff0000;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 40px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        select.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        select option {
+            background: #1a1a1a;
+        }
+
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .preset-btn {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 12px;
+        }
+
+        .preset-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #ff0000;
+        }
+
+        .value-display {
+            color: #ff6666;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+
+        #blink-toggle, #auto-change-toggle {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 0, 0, 0.3);
+            color: #fff;
+            border: 2px solid #ff0000;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        #blink-toggle:hover, #auto-change-toggle:hover {
+            background: rgba(255, 0, 0, 0.5);
+        }
+
+        #blink-toggle.active, #auto-change-toggle.active {
+            background: rgba(0, 255, 0, 0.3);
+            border-color: #00ff00;
+        }
+
+        #share-button {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 100, 255, 0.3);
+            color: #fff;
+            border: 2px solid #0066ff;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+
+        #share-button:hover {
+            background: rgba(0, 100, 255, 0.5);
+        }
+
+        .share-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #share-link {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            font-size: 12px;
+            margin-top: 10px;
+            word-break: break-all;
+            display: none;
+        }
+
+        #share-link.visible {
+            display: block;
+        }
+
+        #copy-button {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 200, 0, 0.3);
+            color: #fff;
+            border: 2px solid #00cc00;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 12px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        #copy-button.visible {
+            display: block;
+        }
+
+        #copy-button:hover {
+            background: rgba(0, 200, 0, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <button id="controls-toggle">Customize Eyes</button>
+
+    <div id="controls">
+        <div class="control-group">
+            <label>Eye Shape</label>
+            <select id="eye-shape">
+                <option value="ellipse">Classic Ellipse</option>
+                <option value="almond">Almond</option>
+                <option value="round">Round</option>
+                <option value="cat">Cat Eyes</option>
+                <option value="reptile">Reptilian</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>Iris Color</label>
+            <input type="color" id="iris-color" value="#ff0000">
+        </div>
+
+        <div class="control-group">
+            <label>Pupil Color</label>
+            <input type="color" id="pupil-color" value="#000000">
+        </div>
+
+        <div class="control-group">
+            <label>Sclera (White) Color</label>
+            <input type="color" id="sclera-color" value="#ffffff">
+        </div>
+
+        <div class="control-group">
+            <label>Eye Size: <span id="size-value">100</span>px</label>
+            <input type="range" id="eye-size" min="50" max="200" value="100">
+        </div>
+
+        <div class="control-group">
+            <label>Eye Spacing: <span id="spacing-value">150</span>px</label>
+            <input type="range" id="eye-spacing" min="50" max="300" value="150">
+        </div>
+
+        <div class="control-group">
+            <label>Pupil Size: <span id="pupil-size-value">40</span>%</label>
+            <input type="range" id="pupil-size" min="20" max="80" value="40">
+        </div>
+
+        <div class="control-group">
+            <label>Iris Glow: <span id="glow-value">50</span>%</label>
+            <input type="range" id="iris-glow" min="0" max="100" value="50">
+        </div>
+
+        <div class="control-group">
+            <label>Bloodshot Level: <span id="bloodshot-value">0</span>%</label>
+            <input type="range" id="bloodshot-level" min="0" max="100" value="0">
+        </div>
+
+        <div class="control-group">
+            <label>Eye Rotation: <span id="rotation-value">0</span>°</label>
+            <input type="range" id="eye-rotation" min="-45" max="45" value="0">
+        </div>
+
+        <div class="control-group">
+            <label>Wander Speed: <span id="wander-speed-value">50</span>%</label>
+            <input type="range" id="wander-speed" min="10" max="100" value="50">
+        </div>
+
+        <div class="control-group">
+            <label>Wander Distance: <span id="wander-distance-value">50</span>%</label>
+            <input type="range" id="wander-distance" min="10" max="100" value="50">
+        </div>
+
+        <div class="control-group">
+            <label>Movement Smoothness: <span id="movement-smooth-value">50</span>%</label>
+            <input type="range" id="movement-smooth" min="10" max="100" value="50">
+        </div>
+
+        <div class="control-group">
+            <label>Eye Asymmetry: <span id="asymmetry-value">0</span>%</label>
+            <input type="range" id="eye-asymmetry" min="0" max="100" value="0">
+        </div>
+
+        <button id="blink-toggle">Enable Blinking 👁️</button>
+        <button id="auto-change-toggle">Enable Auto-Morph 🔄</button>
+
+        <div class="preset-buttons">
+            <button class="preset-btn" data-preset="demon">😈 Demon</button>
+            <button class="preset-btn" data-preset="ghost">👻 Ghost</button>
+            <button class="preset-btn" data-preset="alien">👽 Alien</button>
+            <button class="preset-btn" data-preset="zombie">🧟 Zombie</button>
+        </div>
+
+        <div class="share-section">
+            <button id="share-button">📤 Share Your Eyes</button>
+            <div id="share-link"></div>
+            <button id="copy-button">📋 Copy Link</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Eye configuration with smooth transition support
+        let config = {
+            eyeShape: 'ellipse',
+            irisColor: '#ff0000',
+            pupilColor: '#000000',
+            scleraColor: '#ffffff',
+            eyeSize: 100,
+            eyeSpacing: 150,
+            pupilSize: 40,
+            irisGlow: 50,
+            bloodshotLevel: 0,
+            eyeRotation: 0,
+            wanderSpeed: 50,
+            wanderDistance: 50,
+            movementSmooth: 50,
+            eyeAsymmetry: 0,
+            blinkEnabled: false,
+            autoChangeEnabled: false
+        };
+
+        // Target config for smooth transitions
+        let targetConfig = {...config};
+
+        // Eye state
+        let eyePositionX = canvas.width / 2;
+        let eyePositionY = canvas.height / 2;
+        let targetEyeX = canvas.width / 2;
+        let targetEyeY = canvas.height / 2;
+        let mouseX = canvas.width / 2;
+        let mouseY = canvas.height / 2;
+        let targetX = canvas.width / 2;
+        let targetY = canvas.height / 2;
+        let isTracking = false;
+        let trackingTimeout;
+        let wanderAngle = Math.random() * Math.PI * 2;
+        let wanderRadius = 0;
+        let blinkTimer = 0;
+        let isBlinking = false;
+        let blinkProgress = 0;
+        let autoChangeTimer = 0;
+        let pupilX = 0;
+        let pupilY = 0;
+
+        // UI visibility state
+        let uiVisible = false;
+        let uiHideTimeout;
+        const UI_HIDE_DELAY = 5000; // Hide after 5 seconds of inactivity
+        let lastInteractionTime = Date.now();
+
+        // Show UI elements
+        function showUI() {
+            uiVisible = true;
+            lastInteractionTime = Date.now();
+            document.getElementById('controls-toggle').classList.add('visible');
+            document.getElementById('eye-shape').classList.add('visible');
+            
+            // Reset hide timer
+            clearTimeout(uiHideTimeout);
+            uiHideTimeout = setTimeout(hideUI, UI_HIDE_DELAY);
+        }
+
+        // Hide UI elements
+        function hideUI() {
+            // Don't hide if controls panel is open
+            if (controlsPanel.classList.contains('open')) {
+                return;
+            }
+            
+            // Check if enough time has passed since last interaction
+            if (Date.now() - lastInteractionTime < UI_HIDE_DELAY) {
+                return;
+            }
+            
+            uiVisible = false;
+            document.getElementById('controls-toggle').classList.remove('visible');
+            document.getElementById('eye-shape').classList.remove('visible');
+        }
+
+        // Track any user interaction to show UI
+        function handleUserInteraction(e) {
+            lastInteractionTime = Date.now();
+            
+            if (!uiVisible) {
+                showUI();
+            } else {
+                // Reset hide timer on continued interaction
+                clearTimeout(uiHideTimeout);
+                uiHideTimeout = setTimeout(hideUI, UI_HIDE_DELAY);
+            }
+        }
+
+        // Color transition
+        let currentIrisColor = config.irisColor;
+        let colorShiftTimer = 0;
+
+        // Movement boundaries
+        const margin = 150;
+
+        // Mouse/Touch tracking - stops eye movement
+        function handleMove(e) {
+            const touch = e.touches ? e.touches[0] : e;
+            mouseX = touch.clientX;
+            mouseY = touch.clientY;
+            isTracking = true;
+            
+            // Show UI on interaction
+            handleUserInteraction(e);
+            
+            // Stop eye wandering when user interacts
+            clearTimeout(trackingTimeout);
+            trackingTimeout = setTimeout(() => {
+                isTracking = false;
+            }, 2000);
+        }
+
+        canvas.addEventListener('mousemove', handleMove);
+        canvas.addEventListener('touchmove', handleMove);
+        canvas.addEventListener('touchstart', (e) => {
+            handleMove(e);
+            showUI(); // Always show on tap
+        });
+        canvas.addEventListener('click', (e) => {
+            handleMove(e);
+            showUI(); // Always show on click
+        });
+
+        // Smooth config interpolation
+        function lerpConfig() {
+            const lerpSpeed = 0.02;
+            config.eyeSize += (targetConfig.eyeSize - config.eyeSize) * lerpSpeed;
+            config.eyeSpacing += (targetConfig.eyeSpacing - config.eyeSpacing) * lerpSpeed;
+            config.pupilSize += (targetConfig.pupilSize - config.pupilSize) * lerpSpeed;
+            config.irisGlow += (targetConfig.irisGlow - config.irisGlow) * lerpSpeed;
+            config.bloodshotLevel += (targetConfig.bloodshotLevel - config.bloodshotLevel) * lerpSpeed;
+            config.eyeRotation += (targetConfig.eyeRotation - config.eyeRotation) * lerpSpeed;
+            config.wanderSpeed += (targetConfig.wanderSpeed - config.wanderSpeed) * lerpSpeed;
+            config.wanderDistance += (targetConfig.wanderDistance - config.wanderDistance) * lerpSpeed;
+            config.movementSmooth += (targetConfig.movementSmooth - config.movementSmooth) * lerpSpeed;
+            config.eyeAsymmetry += (targetConfig.eyeAsymmetry - config.eyeAsymmetry) * lerpSpeed;
+            
+            // Color interpolation
+            config.irisColor = lerpColor(config.irisColor, targetConfig.irisColor, lerpSpeed);
+            config.pupilColor = lerpColor(config.pupilColor, targetConfig.pupilColor, lerpSpeed);
+            config.scleraColor = lerpColor(config.scleraColor, targetConfig.scleraColor, lerpSpeed);
+        }
+
+        // Lerp between two hex colors
+        function lerpColor(color1, color2, t) {
+            const r1 = parseInt(color1.slice(1, 3), 16);
+            const g1 = parseInt(color1.slice(3, 5), 16);
+            const b1 = parseInt(color1.slice(5, 7), 16);
+            
+            const r2 = parseInt(color2.slice(1, 3), 16);
+            const g2 = parseInt(color2.slice(3, 5), 16);
+            const b2 = parseInt(color2.slice(5, 7), 16);
+            
+            const r = Math.round(r1 + (r2 - r1) * t);
+            const g = Math.round(g1 + (g2 - g1) * t);
+            const b = Math.round(b1 + (b2 - b1) * t);
+            
+            return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        }
+
+        // Draw eye shape
+        function drawEyeShape(x, y, width, height, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation);
+            
+            switch(config.eyeShape) {
+                case 'ellipse':
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, width, height, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+                case 'almond':
+                    ctx.beginPath();
+                    ctx.moveTo(-width, 0);
+                    ctx.bezierCurveTo(-width, -height, width, -height, width, 0);
+                    ctx.bezierCurveTo(width, height, -width, height, -width, 0);
+                    ctx.fill();
+                    break;
+                case 'round':
+                    ctx.beginPath();
+                    ctx.arc(0, 0, width, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+                case 'cat':
+                    ctx.beginPath();
+                    ctx.moveTo(-width, 0);
+                    ctx.bezierCurveTo(-width * 0.7, -height * 1.2, width * 0.7, -height * 1.2, width, 0);
+                    ctx.bezierCurveTo(width * 0.7, height * 1.2, -width * 0.7, height * 1.2, -width, 0);
+                    ctx.fill();
+                    break;
+                case 'reptile':
+                    ctx.beginPath();
+                    ctx.moveTo(-width * 1.1, 0);
+                    ctx.lineTo(0, -height);
+                    ctx.lineTo(width * 1.1, 0);
+                    ctx.lineTo(0, height);
+                    ctx.closePath();
+                    ctx.fill();
+                    break;
+            }
+            
+            ctx.restore();
+        }
+
+        // Draw pupil shape
+        function drawPupil(x, y, size) {
+            if (config.eyeShape === 'cat' || config.eyeShape === 'reptile') {
+                // Vertical slit pupil
+                ctx.fillStyle = config.pupilColor;
+                ctx.fillRect(x - size * 0.15, y - size, size * 0.3, size * 2);
+            } else {
+                // Round pupil
+                ctx.fillStyle = config.pupilColor;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Draw bloodshot veins
+        function drawBloodshot(x, y, size) {
+            if (config.bloodshotLevel > 0) {
+                const veins = 8;
+                const alpha = config.bloodshotLevel / 100;
+                
+                for (let i = 0; i < veins; i++) {
+                    const angle = (i / veins) * Math.PI * 2;
+                    const length = size * (0.7 + Math.random() * 0.3);
+                    
+                    ctx.strokeStyle = `rgba(255, 0, 0, ${alpha * 0.5})`;
+                    ctx.lineWidth = 1 + alpha * 2;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    const endX = x + Math.cos(angle) * length;
+                    const endY = y + Math.sin(angle) * length;
+                    ctx.quadraticCurveTo(
+                        x + Math.cos(angle) * length * 0.5 + (Math.random() - 0.5) * 20,
+                        y + Math.sin(angle) * length * 0.5 + (Math.random() - 0.5) * 20,
+                        endX,
+                        endY
+                    );
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // Shift color slightly for eerie effect
+        function shiftColor(baseColor, time) {
+            const r = parseInt(baseColor.slice(1, 3), 16);
+            const g = parseInt(baseColor.slice(3, 5), 16);
+            const b = parseInt(baseColor.slice(5, 7), 16);
+            
+            const shift = Math.sin(time * 0.001) * 20;
+            const newR = Math.max(0, Math.min(255, r + shift));
+            const newG = Math.max(0, Math.min(255, g + shift));
+            const newB = Math.max(0, Math.min(255, b + shift));
+            
+            return `rgb(${Math.floor(newR)}, ${Math.floor(newG)}, ${Math.floor(newB)})`;
+        }
+
+        // Random eye configuration for auto-change
+        function randomizeEyes() {
+            const shapes = ['ellipse', 'almond', 'round', 'cat', 'reptile'];
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ff00ff', '#ffff00', '#00ffff', '#ff6600', '#8800ff'];
+            
+            targetConfig.eyeShape = shapes[Math.floor(Math.random() * shapes.length)];
+            targetConfig.irisColor = colors[Math.floor(Math.random() * colors.length)];
+            targetConfig.pupilColor = colors[Math.floor(Math.random() * colors.length)];
+            targetConfig.eyeSize = 70 + Math.random() * 100;
+            
+            // Ensure spacing scales with eye size to prevent overlap
+            const minSpacing = targetConfig.eyeSize * 2.5;
+            targetConfig.eyeSpacing = Math.max(minSpacing, 100 + Math.random() * 150);
+            
+            targetConfig.pupilSize = 25 + Math.random() * 50;
+            targetConfig.irisGlow = Math.random() * 100;
+            targetConfig.bloodshotLevel = Math.random() * 60;
+            targetConfig.eyeRotation = -30 + Math.random() * 60;
+        }
+
+        // Animation loop
+        function animate() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Lerp config for smooth transitions
+            lerpConfig();
+
+            // Update color shift
+            colorShiftTimer++;
+            currentIrisColor = shiftColor(config.irisColor, colorShiftTimer);
+
+            // Auto-change eyes
+            if (config.autoChangeEnabled) {
+                autoChangeTimer++;
+                if (autoChangeTimer > 300) { // Change every 5 seconds
+                    randomizeEyes();
+                    autoChangeTimer = 0;
+                }
+            }
+
+            // Update eye position on screen (moving around)
+            if (!isTracking) {
+                // Calculate next wander position
+                wanderAngle += (Math.random() - 0.5) * 0.05 * (config.wanderSpeed / 50);
+                const maxDistance = (Math.min(canvas.width, canvas.height) / 4) * (config.wanderDistance / 50);
+                wanderRadius = Math.min(wanderRadius + 2, maxDistance);
+                
+                targetEyeX = canvas.width / 2 + Math.cos(wanderAngle) * wanderRadius;
+                targetEyeY = canvas.height / 2 + Math.sin(wanderAngle) * wanderRadius;
+                
+                // Keep eyes within bounds
+                targetEyeX = Math.max(margin, Math.min(canvas.width - margin, targetEyeX));
+                targetEyeY = Math.max(margin, Math.min(canvas.height - margin, targetEyeY));
+            }
+
+            // Smooth movement
+            const smoothFactor = 0.02 * (config.movementSmooth / 50);
+            eyePositionX += (targetEyeX - eyePositionX) * smoothFactor;
+            eyePositionY += (targetEyeY - eyePositionY) * smoothFactor;
+
+            // Update blink
+            if (config.blinkEnabled) {
+                blinkTimer++;
+                if (blinkTimer > 180 && !isBlinking) {
+                    isBlinking = true;
+                    blinkProgress = 0;
+                    blinkTimer = 0;
+                }
+
+                if (isBlinking) {
+                    blinkProgress += 0.15;
+                    if (blinkProgress >= 1) {
+                        isBlinking = false;
+                        blinkProgress = 0;
+                    }
+                }
+            }
+
+            // Calculate blink scale
+            const blinkScale = isBlinking ? Math.abs(Math.sin(blinkProgress * Math.PI)) : 0;
+            const eyeHeight = config.eyeSize * 0.6 * (1 - blinkScale);
+
+            // Calculate realistic eye spacing - prevent overlap
+            // Minimum spacing should be at least the diameter of the largest eye plus some buffer
+            const maxEyeSize = config.eyeSize * (1 + Math.abs(config.eyeAsymmetry / 100) * 0.3);
+            const minSpacing = maxEyeSize * 2.2; // 2.2x for realistic spacing
+            const actualSpacing = Math.max(minSpacing, config.eyeSpacing);
+
+            // Eye positions - both eyes move together
+            const leftEyeX = eyePositionX - actualSpacing / 2;
+            const rightEyeX = eyePositionX + actualSpacing / 2;
+
+            // Calculate pupil target (what eyes look at)
+            if (isTracking) {
+                targetX = mouseX;
+                targetY = mouseY;
+            } else {
+                // Look in direction of movement
+                targetX = eyePositionX + (targetEyeX - eyePositionX) * 2;
+                targetY = eyePositionY + (targetEyeY - eyePositionY) * 2;
+            }
+
+            // Draw both eyes
+            const eyes = [
+                {x: leftEyeX, y: eyePositionY, asymmetry: -1}, 
+                {x: rightEyeX, y: eyePositionY, asymmetry: 1}
+            ];
+
+            for (let eye of eyes) {
+                // Apply asymmetry
+                const asymmetryFactor = 1 + (config.eyeAsymmetry / 100) * 0.3 * eye.asymmetry;
+                const eyeSize = config.eyeSize * asymmetryFactor;
+                const rotation = (config.eyeRotation * Math.PI / 180) * eye.asymmetry;
+
+                // Calculate pupil position
+                const dx = targetX - eye.x;
+                const dy = targetY - eye.y;
+                const angle = Math.atan2(dy, dx);
+                const distance = Math.min(Math.sqrt(dx * dx + dy * dy), eyeSize * 0.3);
+                
+                pupilX = eye.x + Math.cos(angle) * distance * 0.5;
+                pupilY = eye.y + Math.sin(angle) * distance * 0.5;
+
+                // Draw eye white (sclera)
+                ctx.fillStyle = config.scleraColor;
+                drawEyeShape(eye.x, eye.y, eyeSize, eyeHeight, rotation);
+
+                // Draw bloodshot
+                drawBloodshot(eye.x, eye.y, eyeSize);
+
+                // Draw iris
+                ctx.fillStyle = currentIrisColor;
+                const irisSize = eyeSize * 0.6 * (1 - blinkScale * 0.5);
+                drawEyeShape(pupilX, pupilY, irisSize * 0.5, irisSize * 0.5, rotation * 0.5);
+
+                // Add glow effect
+                const glowIntensity = config.irisGlow / 100;
+                const gradient = ctx.createRadialGradient(pupilX, pupilY, 0, pupilX, pupilY, irisSize * 0.7);
+                gradient.addColorStop(0, currentIrisColor);
+                gradient.addColorStop(1, `rgba(0, 0, 0, ${1 - glowIntensity})`);
+                ctx.fillStyle = gradient;
+                ctx.globalAlpha = glowIntensity;
+                ctx.beginPath();
+                ctx.arc(pupilX, pupilY, irisSize * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+
+                // Draw pupil
+                const pupilSize = irisSize * (config.pupilSize / 100);
+                drawPupil(pupilX, pupilY, pupilSize);
+
+                // Add highlight
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.beginPath();
+                ctx.arc(pupilX - pupilSize * 0.3, pupilY - pupilSize * 0.3, pupilSize * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Controls
+        const controlsPanel = document.getElementById('controls');
+        const controlsToggle = document.getElementById('controls-toggle');
+
+        function openControls() {
+            controlsPanel.classList.add('open');
+            clearTimeout(uiHideTimeout);
+            lastInteractionTime = Date.now();
+        }
+
+        function closeControls() {
+            controlsPanel.classList.remove('open');
+            // Start hide timer when panel closes
+            lastInteractionTime = Date.now();
+            uiHideTimeout = setTimeout(hideUI, UI_HIDE_DELAY);
+        }
+
+        function toggleControls() {
+            if (controlsPanel.classList.contains('open')) {
+                closeControls();
+            } else {
+                openControls();
+            }
+        }
+
+        controlsToggle.addEventListener('click', (e) => {
+            toggleControls();
+            e.stopPropagation();
+        });
+
+        // Click outside to close controls panel
+        document.addEventListener('click', (e) => {
+            if (controlsPanel.classList.contains('open')) {
+                const isClickInsidePanel = controlsPanel.contains(e.target);
+                const isClickOnToggle = controlsToggle.contains(e.target);
+                
+                if (!isClickInsidePanel && !isClickOnToggle) {
+                    closeControls();
+                }
+            }
+        });
+
+        // Keep UI visible when interacting with controls
+        controlsPanel.addEventListener('click', (e) => {
+            lastInteractionTime = Date.now();
+            clearTimeout(uiHideTimeout);
+            e.stopPropagation();
+        });
+
+        controlsPanel.addEventListener('touchstart', (e) => {
+            lastInteractionTime = Date.now();
+            clearTimeout(uiHideTimeout);
+            e.stopPropagation();
+        });
+
+        // Share functionality
+        function encodeConfig() {
+            const shareConfig = {
+                eyeShape: targetConfig.eyeShape,
+                irisColor: targetConfig.irisColor,
+                pupilColor: targetConfig.pupilColor,
+                scleraColor: targetConfig.scleraColor,
+                eyeSize: Math.round(targetConfig.eyeSize),
+                eyeSpacing: Math.round(targetConfig.eyeSpacing),
+                pupilSize: Math.round(targetConfig.pupilSize),
+                irisGlow: Math.round(targetConfig.irisGlow),
+                bloodshotLevel: Math.round(targetConfig.bloodshotLevel),
+                eyeRotation: Math.round(targetConfig.eyeRotation),
+                wanderSpeed: Math.round(targetConfig.wanderSpeed),
+                wanderDistance: Math.round(targetConfig.wanderDistance),
+                movementSmooth: Math.round(targetConfig.movementSmooth),
+                eyeAsymmetry: Math.round(targetConfig.eyeAsymmetry),
+                blinkEnabled: config.blinkEnabled,
+                autoChangeEnabled: config.autoChangeEnabled
+            };
+            
+            const encoded = btoa(JSON.stringify(shareConfig));
+            return encoded;
+        }
+
+        function decodeConfig(encoded) {
+            try {
+                const decoded = JSON.parse(atob(encoded));
+                return decoded;
+            } catch (e) {
+                console.error('Failed to decode config:', e);
+                return null;
+            }
+        }
+
+        function applySharedConfig(sharedConfig) {
+            targetConfig.eyeShape = sharedConfig.eyeShape;
+            config.eyeShape = sharedConfig.eyeShape;
+            targetConfig.irisColor = sharedConfig.irisColor;
+            targetConfig.pupilColor = sharedConfig.pupilColor;
+            targetConfig.scleraColor = sharedConfig.scleraColor;
+            targetConfig.eyeSize = sharedConfig.eyeSize;
+            targetConfig.eyeSpacing = sharedConfig.eyeSpacing;
+            targetConfig.pupilSize = sharedConfig.pupilSize;
+            targetConfig.irisGlow = sharedConfig.irisGlow;
+            targetConfig.bloodshotLevel = sharedConfig.bloodshotLevel;
+            targetConfig.eyeRotation = sharedConfig.eyeRotation;
+            targetConfig.wanderSpeed = sharedConfig.wanderSpeed;
+            targetConfig.wanderDistance = sharedConfig.wanderDistance;
+            targetConfig.movementSmooth = sharedConfig.movementSmooth;
+            targetConfig.eyeAsymmetry = sharedConfig.eyeAsymmetry;
+            config.blinkEnabled = sharedConfig.blinkEnabled;
+            targetConfig.blinkEnabled = sharedConfig.blinkEnabled;
+            config.autoChangeEnabled = sharedConfig.autoChangeEnabled;
+            targetConfig.autoChangeEnabled = sharedConfig.autoChangeEnabled;
+            
+            // Update UI toggles
+            document.getElementById('blink-toggle').classList.toggle('active', config.blinkEnabled);
+            document.getElementById('blink-toggle').textContent = config.blinkEnabled ? 'Disable Blinking 👁️' : 'Enable Blinking 👁️';
+            document.getElementById('auto-change-toggle').classList.toggle('active', config.autoChangeEnabled);
+            document.getElementById('auto-change-toggle').textContent = config.autoChangeEnabled ? 'Disable Auto-Morph 🔄' : 'Enable Auto-Morph 🔄';
+            
+            updateControlsUI();
+        }
+
+        // Check URL for shared config on load
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const sharedConfig = urlParams.get('eyes');
+            
+            if (sharedConfig) {
+                const decoded = decodeConfig(sharedConfig);
+                if (decoded) {
+                    applySharedConfig(decoded);
+                }
+            }
+        });
+
+        // Share button handler
+        document.getElementById('share-button').addEventListener('click', function() {
+            const encoded = encodeConfig();
+            const shareUrl = window.location.origin + window.location.pathname + '?eyes=' + encoded;
+            
+            const shareLinkDiv = document.getElementById('share-link');
+            const copyButton = document.getElementById('copy-button');
+            
+            shareLinkDiv.textContent = shareUrl;
+            shareLinkDiv.classList.add('visible');
+            copyButton.classList.add('visible');
+            
+            // Try to use Web Share API if available
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Check out my eerie eyes!',
+                    text: 'I created some creepy eyes - click to see them!',
+                    url: shareUrl
+                }).catch(() => {
+                    // Fallback already shown (link + copy button)
+                });
+            }
+        });
+
+        // Copy button handler
+        document.getElementById('copy-button').addEventListener('click', async function() {
+            const shareLinkDiv = document.getElementById('share-link');
+            const shareUrl = shareLinkDiv.textContent;
+            
+            try {
+                await navigator.clipboard.writeText(shareUrl);
+                this.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    this.textContent = '📋 Copy Link';
+                }, 2000);
+            } catch (err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = shareUrl;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    this.textContent = '✅ Copied!';
+                    setTimeout(() => {
+                        this.textContent = '📋 Copy Link';
+                    }, 2000);
+                } catch (err2) {
+                    this.textContent = '❌ Failed to copy';
+                }
+                document.body.removeChild(textArea);
+            }
+        });
+
+        // Event listeners for controls
+        document.getElementById('eye-shape').addEventListener('change', (e) => {
+            config.eyeShape = e.target.value;
+            targetConfig.eyeShape = e.target.value;
+        });
+
+        document.getElementById('iris-color').addEventListener('input', (e) => {
+            targetConfig.irisColor = e.target.value;
+        });
+
+        document.getElementById('pupil-color').addEventListener('input', (e) => {
+            targetConfig.pupilColor = e.target.value;
+        });
+
+        document.getElementById('sclera-color').addEventListener('input', (e) => {
+            targetConfig.scleraColor = e.target.value;
+        });
+
+        document.getElementById('eye-size').addEventListener('input', (e) => {
+            targetConfig.eyeSize = parseInt(e.target.value);
+            document.getElementById('size-value').textContent = e.target.value;
+            
+            // Update spacing display if overlap would occur
+            const maxEyeSize = parseInt(e.target.value) * (1 + Math.abs(targetConfig.eyeAsymmetry / 100) * 0.3);
+            const minSpacing = maxEyeSize * 2.2;
+            if (targetConfig.eyeSpacing < minSpacing) {
+                document.getElementById('spacing-value').textContent = targetConfig.eyeSpacing + ' (auto-adjusted)';
+            } else {
+                document.getElementById('spacing-value').textContent = targetConfig.eyeSpacing;
+            }
+        });
+
+        document.getElementById('eye-spacing').addEventListener('input', (e) => {
+            const requestedSpacing = parseInt(e.target.value);
+            const maxEyeSize = targetConfig.eyeSize * (1 + Math.abs(targetConfig.eyeAsymmetry / 100) * 0.3);
+            const minSpacing = maxEyeSize * 2.2;
+            
+            // Update to requested value but enforce minimum during rendering
+            targetConfig.eyeSpacing = requestedSpacing;
+            
+            // Update display with warning if too close
+            if (requestedSpacing < minSpacing) {
+                document.getElementById('spacing-value').textContent = e.target.value + ' (auto-adjusted)';
+            } else {
+                document.getElementById('spacing-value').textContent = e.target.value;
+            }
+        });
+
+        document.getElementById('pupil-size').addEventListener('input', (e) => {
+            targetConfig.pupilSize = parseInt(e.target.value);
+            document.getElementById('pupil-size-value').textContent = e.target.value;
+        });
+
+        document.getElementById('iris-glow').addEventListener('input', (e) => {
+            targetConfig.irisGlow = parseInt(e.target.value);
+            document.getElementById('glow-value').textContent = e.target.value;
+        });
+
+        document.getElementById('bloodshot-level').addEventListener('input', (e) => {
+            targetConfig.bloodshotLevel = parseInt(e.target.value);
+            document.getElementById('bloodshot-value').textContent = e.target.value;
+        });
+
+        document.getElementById('eye-rotation').addEventListener('input', (e) => {
+            targetConfig.eyeRotation = parseInt(e.target.value);
+            document.getElementById('rotation-value').textContent = e.target.value;
+        });
+
+        document.getElementById('wander-speed').addEventListener('input', (e) => {
+            targetConfig.wanderSpeed = parseInt(e.target.value);
+            document.getElementById('wander-speed-value').textContent = e.target.value;
+        });
+
+        document.getElementById('wander-distance').addEventListener('input', (e) => {
+            targetConfig.wanderDistance = parseInt(e.target.value);
+            document.getElementById('wander-distance-value').textContent = e.target.value;
+        });
+
+        document.getElementById('movement-smooth').addEventListener('input', (e) => {
+            targetConfig.movementSmooth = parseInt(e.target.value);
+            document.getElementById('movement-smooth-value').textContent = e.target.value;
+        });
+
+        document.getElementById('eye-asymmetry').addEventListener('input', (e) => {
+            targetConfig.eyeAsymmetry = parseInt(e.target.value);
+            document.getElementById('asymmetry-value').textContent = e.target.value;
+        });
+
+        document.getElementById('blink-toggle').addEventListener('click', function() {
+            config.blinkEnabled = !config.blinkEnabled;
+            targetConfig.blinkEnabled = config.blinkEnabled;
+            this.classList.toggle('active');
+            this.textContent = config.blinkEnabled ? 'Disable Blinking 👁️' : 'Enable Blinking 👁️';
+        });
+
+        document.getElementById('auto-change-toggle').addEventListener('click', function() {
+            config.autoChangeEnabled = !config.autoChangeEnabled;
+            targetConfig.autoChangeEnabled = config.autoChangeEnabled;
+            this.classList.toggle('active');
+            this.textContent = config.autoChangeEnabled ? 'Disable Auto-Morph 🔄' : 'Enable Auto-Morph 🔄';
+            if (config.autoChangeEnabled) {
+                autoChangeTimer = 0;
+            }
+        });
+
+        // Preset configurations - Fixed with event delegation
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const preset = this.getAttribute('data-preset');
+                applyPreset(preset);
+            });
+        });
+
+        function applyPreset(preset) {
+            switch(preset) {
+                case 'demon':
+                    targetConfig.eyeShape = 'cat';
+                    targetConfig.irisColor = '#ff0000';
+                    targetConfig.pupilColor = '#000000';
+                    targetConfig.scleraColor = '#ffdddd';
+                    targetConfig.eyeSize = 120;
+                    targetConfig.eyeSpacing = 280; // 2.3x eye size for realistic spacing
+                    targetConfig.pupilSize = 30;
+                    targetConfig.irisGlow = 80;
+                    targetConfig.bloodshotLevel = 60;
+                    targetConfig.eyeRotation = -10;
+                    break;
+                case 'ghost':
+                    targetConfig.eyeShape = 'round';
+                    targetConfig.irisColor = '#00ffff';
+                    targetConfig.pupilColor = '#ffffff';
+                    targetConfig.scleraColor = '#e0e0e0';
+                    targetConfig.eyeSize = 90;
+                    targetConfig.eyeSpacing = 210; // 2.3x eye size
+                    targetConfig.pupilSize = 60;
+                    targetConfig.irisGlow = 100;
+                    targetConfig.bloodshotLevel = 0;
+                    targetConfig.eyeRotation = 0;
+                    break;
+                case 'alien':
+                    targetConfig.eyeShape = 'almond';
+                    targetConfig.irisColor = '#00ff00';
+                    targetConfig.pupilColor = '#000000';
+                    targetConfig.scleraColor = '#aaffaa';
+                    targetConfig.eyeSize = 140;
+                    targetConfig.eyeSpacing = 320; // 2.3x eye size
+                    targetConfig.pupilSize = 50;
+                    targetConfig.irisGlow = 70;
+                    targetConfig.bloodshotLevel = 0;
+                    targetConfig.eyeRotation = 15;
+                    break;
+                case 'zombie':
+                    targetConfig.eyeShape = 'ellipse';
+                    targetConfig.irisColor = '#88ff00';
+                    targetConfig.pupilColor = '#330000';
+                    targetConfig.scleraColor = '#ccccaa';
+                    targetConfig.eyeSize = 100;
+                    targetConfig.eyeSpacing = 230; // 2.3x eye size
+                    targetConfig.pupilSize = 70;
+                    targetConfig.irisGlow = 30;
+                    targetConfig.bloodshotLevel = 80;
+                    targetConfig.eyeRotation = -5;
+                    break;
+            }
+            updateControlsUI();
+        }
+
+        function updateControlsUI() {
+            document.getElementById('eye-shape').value = targetConfig.eyeShape;
+            document.getElementById('iris-color').value = targetConfig.irisColor;
+            document.getElementById('pupil-color').value = targetConfig.pupilColor;
+            document.getElementById('sclera-color').value = targetConfig.scleraColor;
+            document.getElementById('eye-size').value = Math.round(targetConfig.eyeSize);
+            document.getElementById('eye-spacing').value = Math.round(targetConfig.eyeSpacing);
+            document.getElementById('pupil-size').value = Math.round(targetConfig.pupilSize);
+            document.getElementById('iris-glow').value = Math.round(targetConfig.irisGlow);
+            document.getElementById('bloodshot-level').value = Math.round(targetConfig.bloodshotLevel);
+            document.getElementById('eye-rotation').value = Math.round(targetConfig.eyeRotation);
+            document.getElementById('wander-speed').value = Math.round(targetConfig.wanderSpeed);
+            document.getElementById('wander-distance').value = Math.round(targetConfig.wanderDistance);
+            document.getElementById('movement-smooth').value = Math.round(targetConfig.movementSmooth);
+            document.getElementById('eye-asymmetry').value = Math.round(targetConfig.eyeAsymmetry);
+            
+            document.getElementById('size-value').textContent = Math.round(targetConfig.eyeSize);
+            document.getElementById('spacing-value').textContent = Math.round(targetConfig.eyeSpacing);
+            document.getElementById('pupil-size-value').textContent = Math.round(targetConfig.pupilSize);
+            document.getElementById('glow-value').textContent = Math.round(targetConfig.irisGlow);
+            document.getElementById('bloodshot-value').textContent = Math.round(targetConfig.bloodshotLevel);
+            document.getElementById('rotation-value').textContent = Math.round(targetConfig.eyeRotation);
+            document.getElementById('wander-speed-value').textContent = Math.round(targetConfig.wanderSpeed);
+            document.getElementById('wander-distance-value').textContent = Math.round(targetConfig.wanderDistance);
+            document.getElementById('movement-smooth-value').textContent = Math.round(targetConfig.movementSmooth);
+            document.getElementById('asymmetry-value').textContent = Math.round(targetConfig.eyeAsymmetry);
+        }
+
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>
