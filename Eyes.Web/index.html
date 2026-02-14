@@ -385,7 +385,10 @@
                 <div class="lock-icon">🔒</div>
                 <h3>Premium Features</h3>
                 <p>Unlock full customization with advanced controls, effects, and sharing!</p>
-                <button class="get-premium-btn" onclick="window.location.href='https://play.google.com/store/apps/details?id=com.bouncy.eyesandroid'">
+                <!--<button class="get-premium-btn" onclick="window.location.href='https://play.google.com/store/apps/details?id=com.bouncy.eyesandroid'">
+                    Get Premium - $0.99
+                </button>-->
+                <button class="get-premium-btn" onclick="handlePremiumClick()">
                     Get Premium - $0.99
                 </button>
             </div>
@@ -468,6 +471,17 @@
     </div>
 
     <script>
+        function handlePremiumClick() {
+            if (window.Android && typeof Android.purchasePremium === "function") {
+                // Running inside Android app → trigger native billing
+                Android.purchasePremium();
+            } else {
+                // Running in a normal browser → send to Play Store
+                window.location.href = "https://play.google.com/store/apps/details?id=com.bouncy.eyesandroid";
+            }
+}
+        
+        
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         
