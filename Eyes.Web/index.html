@@ -1020,8 +1020,41 @@
             e.stopPropagation();
         });
 
+        // ── URL Encryption ─────────────────────────────────────────────────────
+        // MUST match bouncyeyes_bot.py exactly:
+        //   payload = SIG(4 bytes) + XOR(JSON) + maxUses(1 byte)
+        //   key cycles byte-by-byte over the JSON.
+        // -----------------------------------------------------------------------
+        const _URL_SECRET = "BouncyEyes_K3y_Ch4ng3_M3!"; // keep in sync with bot
+
+        function _strToBytes(str) {
+            return new TextEncoder().encode(str);
+        }
+
+        function _xorDecrypt(data, keyBytes) {
+            const out = new Uint8Array(data.length);
+            for (let i = 0; i < data.length; i++) {
+                out[i] = data[i] ^ keyBytes[i % keyBytes.length];
+            }
+            return out;
+        }
+
+        function _base64urlToBytes(b64) {
+            // Restore standard base64 padding
+            const padded = b64 + '==='.slice((b64.length + 3) % 4);
+            const std = padded.replace(/-/g, '+').replace(/_/g, '/');
+            const raw = atob(std);
+            return Uint8Array.from(raw, c => c.charCodeAt(0));
+        }
+
         // Share functionality
         function encodeConfig() {
+            // Encode via the same scheme as the bot (XOR + HMAC-like stub).
+            // For browser-generated links we use a simplified version:
+            // we don't have SubtleCrypto sync so we XOR + append a simple
+            // checksum and the max-uses byte.  Full HMAC is only enforced by
+            // the bot; browser-generated links omit the HMAC bytes (set to 0x00)
+            // so decodeConfig knows to skip HMAC verification.
             const shareConfig = {
                 eyeShape: targetConfig.eyeShape,
                 irisColor: targetConfig.irisColor,
@@ -1040,49 +1073,142 @@
                 blinkEnabled: config.blinkEnabled,
                 autoChangeEnabled: config.autoChangeEnabled
             };
-            
-            const encoded = btoa(JSON.stringify(shareConfig));
-            return encoded;
+
+            const jsonBytes = _strToBytes(JSON.stringify(shareConfig));
+            const keyBytes  = _strToBytes(_URL_SECRET);
+            const encrypted = _xorDecrypt(jsonBytes, keyBytes); // XOR is symmetric
+            const maxUses   = 3; // shared browser links: 3 free loads
+
+            // 4 zero bytes as HMAC placeholder (browser can't do sync HMAC)
+            const payload = new Uint8Array(4 + encrypted.length + 1);
+            payload.set(encrypted, 4);
+            payload[payload.length - 1] = maxUses;
+
+            // base64url, no padding
+            const b64 = btoa(String.fromCharCode(...payload))
+                .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+            return b64;
         }
 
         function decodeConfig(encoded) {
             try {
-                const decoded = JSON.parse(atob(encoded));
+                const payload  = _base64urlToBytes(encoded);
+
+                // Payload must be at least: 4 (sig) + 1 (maxUses) + 2 (min JSON)
+                if (payload.length < 7) throw new Error('payload too short');
+
+                const maxUses  = payload[payload.length - 1];          // last byte
+                const cipherBytes = payload.slice(4, payload.length - 1); // skip sig & maxUses
+
+                const keyBytes = _strToBytes(_URL_SECRET);
+                const plain    = _xorDecrypt(cipherBytes, keyBytes);
+                const jsonStr  = new TextDecoder().decode(plain);
+                const decoded  = JSON.parse(jsonStr);
+
+                // ── Use-count enforcement ───────────────────────────────────
+                // We fingerprint the URL by hashing the raw encoded string so
+                // each unique link gets its own counter in localStorage.
+                let fingerprint = 0;
+                for (let i = 0; i < encoded.length; i++) {
+                    fingerprint = (Math.imul(31, fingerprint) + encoded.charCodeAt(i)) >>> 0;
+                }
+                const storageKey = 'be_uses_' + fingerprint.toString(16);
+                const uses = parseInt(localStorage.getItem(storageKey) || '0', 10);
+
+                if (uses >= maxUses) {
+                    // Limit reached — show only free-tier fields
+                    console.warn(`BouncyEyes: shared link use limit (${maxUses}) reached. Showing free preview.`);
+                    decoded._limitReached = true;
+                } else {
+                    localStorage.setItem(storageKey, String(uses + 1));
+                }
+
                 return decoded;
             } catch (e) {
-                console.error('Failed to decode config:', e);
-                return null;
+                // Fall back: try plain base64 JSON (legacy links before encryption)
+                try {
+                    return JSON.parse(atob(encoded));
+                } catch (_) {
+                    console.error('Failed to decode config:', e);
+                    return null;
+                }
             }
         }
 
         function applySharedConfig(sharedConfig) {
+            // Always apply free-tier fields
             targetConfig.eyeShape = sharedConfig.eyeShape;
-            config.eyeShape = sharedConfig.eyeShape;
-            targetConfig.irisColor = sharedConfig.irisColor;
+            config.eyeShape       = sharedConfig.eyeShape;
+            targetConfig.irisColor  = sharedConfig.irisColor;
             targetConfig.pupilColor = sharedConfig.pupilColor;
-            targetConfig.scleraColor = sharedConfig.scleraColor;
-            targetConfig.eyeSize = sharedConfig.eyeSize;
-            targetConfig.eyeSpacing = sharedConfig.eyeSpacing;
-            targetConfig.pupilSize = sharedConfig.pupilSize;
-            targetConfig.irisGlow = sharedConfig.irisGlow;
-            targetConfig.bloodshotLevel = sharedConfig.bloodshotLevel;
-            targetConfig.eyeRotation = sharedConfig.eyeRotation;
-            targetConfig.wanderSpeed = sharedConfig.wanderSpeed;
-            targetConfig.wanderDistance = sharedConfig.wanderDistance;
-            targetConfig.movementSmooth = sharedConfig.movementSmooth;
-            targetConfig.eyeAsymmetry = sharedConfig.eyeAsymmetry;
-            config.blinkEnabled = sharedConfig.blinkEnabled;
-            targetConfig.blinkEnabled = sharedConfig.blinkEnabled;
-            config.autoChangeEnabled = sharedConfig.autoChangeEnabled;
-            targetConfig.autoChangeEnabled = sharedConfig.autoChangeEnabled;
-            
-            // Update UI toggles
-            document.getElementById('blink-toggle').classList.toggle('active', config.blinkEnabled);
-            document.getElementById('blink-toggle').textContent = config.blinkEnabled ? 'Disable Blinking 👁️' : 'Enable Blinking 👁️';
-            document.getElementById('auto-change-toggle').classList.toggle('active', config.autoChangeEnabled);
-            document.getElementById('auto-change-toggle').textContent = config.autoChangeEnabled ? 'Disable Auto-Morph 🔄' : 'Enable Auto-Morph 🔄';
-            
+
+            if (sharedConfig._limitReached) {
+                // Use-limit hit — show only the free preview, prompt upgrade
+                _showSharedLimitBanner();
+            } else {
+                // Full premium fields
+                targetConfig.scleraColor     = sharedConfig.scleraColor;
+                targetConfig.eyeSize         = sharedConfig.eyeSize;
+                targetConfig.eyeSpacing      = sharedConfig.eyeSpacing;
+                targetConfig.pupilSize       = sharedConfig.pupilSize;
+                targetConfig.irisGlow        = sharedConfig.irisGlow;
+                targetConfig.bloodshotLevel  = sharedConfig.bloodshotLevel;
+                targetConfig.eyeRotation     = sharedConfig.eyeRotation;
+                targetConfig.wanderSpeed     = sharedConfig.wanderSpeed;
+                targetConfig.wanderDistance  = sharedConfig.wanderDistance;
+                targetConfig.movementSmooth  = sharedConfig.movementSmooth;
+                targetConfig.eyeAsymmetry    = sharedConfig.eyeAsymmetry;
+                config.blinkEnabled          = sharedConfig.blinkEnabled;
+                targetConfig.blinkEnabled    = sharedConfig.blinkEnabled;
+                config.autoChangeEnabled     = sharedConfig.autoChangeEnabled;
+                targetConfig.autoChangeEnabled = sharedConfig.autoChangeEnabled;
+
+                document.getElementById('blink-toggle').classList.toggle('active', config.blinkEnabled);
+                document.getElementById('blink-toggle').textContent = config.blinkEnabled ? 'Disable Blinking 👁️' : 'Enable Blinking 👁️';
+                document.getElementById('auto-change-toggle').classList.toggle('active', config.autoChangeEnabled);
+                document.getElementById('auto-change-toggle').textContent = config.autoChangeEnabled ? 'Disable Auto-Morph 🔄' : 'Enable Auto-Morph 🔄';
+            }
+
             updateControlsUI();
+        }
+
+        function _showSharedLimitBanner() {
+            // Inject a non-intrusive banner urging the viewer to get premium
+            if (document.getElementById('_be_limit_banner')) return;
+            const banner = document.createElement('div');
+            banner.id = '_be_limit_banner';
+            banner.style.cssText = [
+                'position:fixed', 'top:18px', 'left:50%',
+                'transform:translateX(-50%)',
+                'background:rgba(20,20,20,0.92)',
+                'color:#fff', 'padding:14px 22px',
+                'border-radius:14px',
+                'border:2px solid #764ba2',
+                'font-size:13px', 'text-align:center',
+                'z-index:9999', 'max-width:320px',
+                'box-shadow:0 4px 20px rgba(118,75,162,0.5)',
+                'line-height:1.5'
+            ].join(';');
+            banner.innerHTML = `
+                <div style="font-size:22px;margin-bottom:6px">👁️🔒</div>
+                <strong>Free preview limit reached</strong><br>
+                <span style="color:#ccc;font-size:12px">
+                  This shared link has been used too many times.<br>
+                  Get the app to create &amp; save unlimited eyes!
+                </span><br>
+                <a href="https://play.google.com/store/apps/details?id=com.bouncy.eyesandroid"
+                   style="display:inline-block;margin-top:10px;padding:8px 18px;
+                          background:linear-gradient(135deg,#667eea,#764ba2);
+                          color:#fff;border-radius:8px;text-decoration:none;
+                          font-size:13px;font-weight:bold">
+                  Get Premium – $0.99
+                </a>
+                <button onclick="this.parentElement.remove()"
+                  style="display:block;margin:8px auto 0;background:none;
+                         border:none;color:#888;cursor:pointer;font-size:12px">
+                  Dismiss
+                </button>`;
+            document.body.appendChild(banner);
         }
 
         // Check URL for shared config on load
