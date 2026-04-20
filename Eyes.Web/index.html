@@ -636,8 +636,6 @@
         let currentIrisColor = config.irisColor;
         let colorShiftTimer = 0;
 
-        // Movement boundaries
-        const margin = 150;
 
         // Mouse/Touch tracking - stops eye movement
         function handleMove(e) {
@@ -846,19 +844,32 @@
                 }
             }
 
+            // Compute dynamic margins so eyes never clip the screen edge
+            // X margin: half the total eye span (spacing + one eye radius on each side)
+            const halfSpan = config.eyeSpacing / 2 + config.eyeSize * 1.1;
+            const marginX = Math.min(halfSpan, canvas.width / 2 - 10);
+            // Y margin: eye height is ~60% of eyeSize; add a little padding
+            const marginY = Math.max(config.eyeSize * 0.7, 20);
+
             // Update eye position on screen (moving around)
             if (!isTracking) {
                 // Calculate next wander position
                 wanderAngle += (Math.random() - 0.5) * 0.05 * (config.wanderSpeed / 50);
-                const maxDistance = (Math.min(canvas.width, canvas.height) / 4) * (config.wanderDistance / 50);
+                // Limit wander radius so it can't push eyes off screen
+                const maxWanderX = Math.max(0, canvas.width / 2 - marginX);
+                const maxWanderY = Math.max(0, canvas.height / 2 - marginY);
+                const maxDistance = Math.min(
+                    Math.min(maxWanderX, maxWanderY),
+                    (Math.min(canvas.width, canvas.height) / 4) * (config.wanderDistance / 50)
+                );
                 wanderRadius = Math.min(wanderRadius + 2, maxDistance);
                 
                 targetEyeX = canvas.width / 2 + Math.cos(wanderAngle) * wanderRadius;
                 targetEyeY = canvas.height / 2 + Math.sin(wanderAngle) * wanderRadius;
                 
-                // Keep eyes within bounds
-                targetEyeX = Math.max(margin, Math.min(canvas.width - margin, targetEyeX));
-                targetEyeY = Math.max(margin, Math.min(canvas.height - margin, targetEyeY));
+                // Hard clamp so eyes always stay fully on screen
+                targetEyeX = Math.max(marginX, Math.min(canvas.width - marginX, targetEyeX));
+                targetEyeY = Math.max(marginY, Math.min(canvas.height - marginY, targetEyeY));
             }
 
             // Smooth movement
