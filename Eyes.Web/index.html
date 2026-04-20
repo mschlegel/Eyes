@@ -216,9 +216,10 @@
             border-color: #00ff00;
         }
 
-        #blink-toggle.locked {
+        #blink-toggle.locked, #auto-change-toggle.locked {
             pointer-events: none;
             opacity: 0.5;
+            cursor: not-allowed;
         }
 
         #auto-change-toggle:disabled {
@@ -350,84 +351,9 @@
             opacity: 0.5;
         }
 
-        /* Full-screen premium gate */
-        #premium-gate {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 30px;
-        }
-
-        #premium-gate .gate-eyes {
-            font-size: 64px;
-            margin-bottom: 20px;
-            animation: pulse-eyes 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse-eyes {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.8; }
-        }
-
-        #premium-gate h2 {
-            color: #fff;
-            font-size: 26px;
-            margin-bottom: 12px;
-            letter-spacing: 1px;
-        }
-
-        #premium-gate p {
-            color: #aaa;
-            font-size: 15px;
-            margin-bottom: 30px;
-            line-height: 1.6;
-            max-width: 320px;
-        }
-
-        #premium-gate .gate-premium-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff;
-            border: none;
-            border-radius: 12px;
-            padding: 16px 36px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.5);
-        }
-
-        #premium-gate .gate-premium-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.7);
-        }
-
-        #premium-gate .gate-tagline {
-            color: #555;
-            font-size: 12px;
-            margin-top: 20px;
-        }
     </style>
 </head>
 <body>
-    <!-- Full-screen premium gate (shown to non-premium users) -->
-    <div id="premium-gate">
-        <div class="gate-eyes">👁️👁️</div>
-        <h2>BouncyEyes Premium</h2>
-        <p>Unlock the full experience — animated bouncy eyes, full customization, presets, and more.</p>
-        <button class="gate-premium-btn" onclick="handlePremiumClick()">Get Premium — $0.99</button>
-        <div class="gate-tagline">One-time purchase · No subscription</div>
-    </div>
-
     <canvas id="canvas"></canvas>
     
     <button id="controls-toggle">Customize Eyes</button>
@@ -525,10 +451,10 @@
             </div>
 
             <button id="blink-toggle" class="locked">Enable Blinking 👁️</button>
-        </div>
 
-        <!-- Auto-morph - available for free users with trial timer -->
-        <button id="auto-change-toggle">Enable Auto-Morph 🔄</button>
+            <!-- Auto-morph - premium only -->
+            <button id="auto-change-toggle" class="locked">Enable Auto-Morph 🔄</button>
+        </div>
 
         <!-- Presets - available in free version -->
         <div class="preset-buttons">
@@ -645,12 +571,6 @@
         }
 
         isPremium = checkPremiumStatus();
-
-        // Show or hide the full-screen premium gate
-        const premiumGate = document.getElementById('premium-gate');
-        if (isPremium) {
-            premiumGate.style.display = 'none';
-        }
 
         // Unlock premium features if user has paid
         if (isPremium) {
@@ -1486,31 +1406,7 @@
                 });
             });
         } else {
-            // Free users - auto-morph with trial timer
-            document.getElementById('auto-change-toggle').addEventListener('click', function() {
-                if (!config.autoChangeEnabled) {
-                    // Starting auto-morph
-                    if (!autoMorphTrialActive) {
-                        // First time or trial expired - start new trial
-                        autoMorphTrialStartTime = Date.now();
-                        autoMorphTrialActive = true;
-                    }
-                    
-                    config.autoChangeEnabled = true;
-                    targetConfig.autoChangeEnabled = true;
-                    this.classList.toggle('active', true);
-                    autoChangeTimer = 0;
-                    updateAutoMorphButtonText();
-                } else {
-                    // Stopping auto-morph
-                    config.autoChangeEnabled = false;
-                    targetConfig.autoChangeEnabled = false;
-                    this.classList.toggle('active', false);
-                    this.textContent = 'Enable Auto-Morph 🔄';
-                }
-            });
-
-            // Preset configurations - work for both free and premium
+            // Free users - preset configurations only
             document.querySelectorAll('.preset-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const preset = this.getAttribute('data-preset');
@@ -1518,37 +1414,6 @@
                 });
             });
         }
-
-        // Update auto-morph button text with timer (for free users)
-        function updateAutoMorphButtonText() {
-            if (!isPremium && autoMorphTrialActive && config.autoChangeEnabled) {
-                const elapsed = Date.now() - autoMorphTrialStartTime;
-                const remaining = Math.max(0, AUTO_MORPH_TRIAL_DURATION - elapsed);
-                const remainingSeconds = Math.ceil(remaining / 1000);
-                const minutes = Math.floor(remainingSeconds / 60);
-                const seconds = remainingSeconds % 60;
-                
-                const button = document.getElementById('auto-change-toggle');
-                if (remaining > 0) {
-                    button.textContent = `Auto-Morph ${minutes}:${seconds.toString().padStart(2, '0')} ⏱️`;
-                } else {
-                    // Trial expired
-                    config.autoChangeEnabled = false;
-                    targetConfig.autoChangeEnabled = false;
-                    button.classList.remove('active');
-                    button.textContent = 'Auto-Morph Trial Ended 🔒';
-                    button.disabled = true;
-                    autoMorphTrialActive = false;
-                }
-            }
-        }
-
-        // Check trial timer every second
-        setInterval(() => {
-            if (!isPremium && autoMorphTrialActive && config.autoChangeEnabled) {
-                updateAutoMorphButtonText();
-            }
-        }, 1000);
 
         function applyPreset(preset) {
             switch(preset) {
