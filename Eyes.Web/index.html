@@ -1128,11 +1128,14 @@
                 const storageKey = 'be_uses_' + fingerprint.toString(16);
                 const uses = parseInt(localStorage.getItem(storageKey) || '0', 10);
 
-                if (uses >= maxUses) {
+                // maxUses=0 or maxUses=255 both mean unlimited (bot uses 255;
+                // older links may have 0 which was mistakenly treated as "expired").
+                const unlimited = (maxUses === 0 || maxUses === 255);
+                if (!unlimited && uses >= maxUses) {
                     // Limit reached — show only free-tier fields
                     console.warn(`BouncyEyes: shared link use limit (${maxUses}) reached. Showing free preview.`);
                     decoded._limitReached = true;
-                } else {
+                } else if (!unlimited) {
                     localStorage.setItem(storageKey, String(uses + 1));
                 }
 
